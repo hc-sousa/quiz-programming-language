@@ -1,0 +1,144 @@
+create quiz testeSemantic
+
+function nothing introducao():
+showln("O quiz será composto por 3 partes: na primeira serão avaliados os conhecimentos de Matemática, na segunda os de Biologia e na terceira os de Química.")
+end
+
+introducao()
+
+create qmc questao1:
+theme = "Matemática";
+description = "Quanto é 1 + 1?"
+difficulty = 1
+score = 1
+options = group:
+"Op.1" -> "1"
+"Op.2" -> "2"
+"Op.3" -> "3"
+"Op.4" -> "4"
+end
+correct = "Op.2"
+end
+
+create qmc questao2:
+theme = "Matemática";
+description = "Qual vai ser a primeira operação a ser executada na seguinte expressão: 2 + 5 * 8 / 3 + (6 + 7)?"
+difficulty = 2
+score = 1
+options = group:
+"Op.1" -> "2 + 5"
+"Op.2" -> "5 * 8"
+"Op.3" -> "8 / 3"
+"Op.4" -> "6 + 7"
+end
+correct = "Op.4"
+end
+
+create qmc questao3:
+theme = "Matemática";
+description = "Qual dos seguintes números não é primo?"
+difficulty = 2
+score = 1
+options = group:
+"Op.1" -> "2"
+"Op.2" -> "4"
+"Op.3" -> "3"
+"Op.4" -> "1"
+end
+correct = "Op.2"
+end
+
+create qm questao4:
+theme = "Matemática";
+description = "Faça as correspondências corretas."
+difficulty = 2
+score = 1
+left = group:
+"L.1" -> "2+2"
+"L.2" -> "3*5"
+"L.3" -> "15/5"
+"L.4" -> "2^3"
+end
+right = group:
+"R.1" -> "8" 
+"R.2" -> "15"
+"R.3" -> "4"
+"R.4" -> "3"
+end
+match = group:
+"L.1" : "R.3"
+"L.2" : "R.2"
+"L.3" : "R.4"
+"L.4" : "R.1"
+end
+end
+
+create qmc questao5:
+theme = "Biologia"
+description = "A estratégia evolutiva que resulta em polinização mais eficiente quando esta depende do vento é o(a):"
+difficulty = 5
+score = 2
+options = group:
+"Op.1" -> "diminuição do cálice."
+"Op.2" -> "disponibilização do néctar."
+"Op.3" -> "intensificação da cor das pétalas."
+"Op.4" -> "aumento do número de estames."
+end
+correct = "Op.4"
+end
+questao5 shuffle
+
+create qmc questao6:
+theme = "Biologia"
+description = "A ausência da proteína p53 poderá favorecer a:"
+difficulty = 3
+score = 2
+options = group:
+"Op.1" -> "proliferação celular exagerada, resultando na formação de um tumor."
+"Op.2" -> "manutenção da estabilidade genética, favorecendo a longevidade."
+"Op.3" -> "ativação de outras proteínas reguladoras, induzindo a apoptose."
+"Op.4" -> "saída imediatada do ciclo celular, antecipando a proteção do DNA."
+end
+correct = "Op.1"
+end
+
+create qmc questao7:
+theme = "Quimica"
+description = "A fixação das moléculas de vapor de água pelos núcleos de condensação ocorre por:"
+difficulty = 3
+score = 2
+end
+
+
+testeSemantic add questao1
+testeSemantic add questao2
+testeSemantic add questao3
+testeSemantic add questao4
+testeSemantic add questao5
+testeSemantic add questao6
+testeSemantic add questao7
+
+questao7.options = group:
+"Op.1" -> "igações covalentes."
+"Op.2" -> "ligações iônicas."
+"Op.3" -> "interações íon-dipolo."
+"Op.4" -> "interações dipolo-dipolo induzido." 
+end
+
+questao7.correct = "Op.2"
+
+number totalScore = 0
+text answer = ""
+number scoreUser = 0;
+number ansscore = 0
+foreach question q in testeSemantic:
+    totalScore += q.score
+    showln(q)
+    answer = input ""
+    ansscore = q checkanswer answer
+    scoreUser += ansscore
+end
+
+showln("You scored " + scoreUser + ", what a gamer")
+
+endprogram

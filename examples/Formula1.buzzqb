@@ -1,0 +1,60 @@
+Theme : "Formula 1"
+	qmc - "Questao1" - 2 - "Nº de vitórias de Michael Schumacher?":
+			"R1" - "91", t;
+			"R2" - "28", f;
+			"R3" - "88", f;
+			"R4" - "21", f;
+	;
+	qmc - "Questao2" - 3 - "Quantos circuitos portugueses já albergaram a F1?":
+			"R1" - "4", t;
+			"R2" - "1", f;
+			"R3" - "3", f;
+			"R4" - "2", f;
+	;
+	qmc - "Questao3" - 4 - "Piloto português que já fez um pódio na F1?":
+			"R1" - "Tiago Monteiro", t;
+			"R2" - "António Félix da Costa", f;
+			"R3" - "Pedro Lamy", f;
+			"R4" - "Henrique Chaves", f;
+			"R5" - "Filipe Albuquerque", f;
+	;
+	qm - "Questao4" - 2 - "Corresponde o piloto à equipa em 2021":
+			left  - "L1" - "Leclerc" +  "L2" - "Alonso" + "L3" - "Raikkonen" + "L4" - "Bottas";
+			right  -  "R1" - "Ferrari" + "R2" - "Alpine" + "R3" - "Alfa Romeo" + "R4" - "Mercedes";
+			Match -  "R1"-"L1" , "R2"-"L2", "R3"-"L3", "R4"-"L4";
+	;
+	qmc - "Questao5" - 3 - "Campeão do mundo de 2012?":
+			"R1" - "Lewis Hamilton", f;
+			"R2" - "Sebastian Vettel", t;
+			"R3" - "Fernando Alonso", f;
+			"R4" - "Mark Webber", f;
+	;
+	qmc - "Questao6" - 4 - "Que mensagem disse kimi Raikkonen durante o GP de Abu Dhabi de 2012?":
+			"R1" - "Gloves and steering wheel", f;
+			"R2" - "Can I have the drink?", f;
+			"R3" - "Just leave me alone, I know what to do", t;
+			"R4" - "I was having a shit", f;
+	;
+	qm - "Questao7" - 5 - "Ordem do top 3 no GP de França de 2021":
+			left  - "L1" - "Primeiro" +  "L2" - "Segundo" + "L3" - "Terceiro" ;
+			right - "R1" - "Perez" + "R2" - "Bottas" + "R3" - "Hamilton" + "R4" - "Verstappen";
+			Match -  "R1"-"L3" , "R2"-"L3", "R3"-"L2";
+	;
+	qmc - "Questao8" - 2 - "Qual a menor diferença de pontos a decidir um campeonato do mundo de pilotos de F1?":
+			"R1" - "2", f;
+			"R2" - "1", f;
+			"R3" - "0.5", t;
+			"R4" - "1.5", f;
+	;
+	qmc - "Questao9" - 2 - "Quantos tailandeses correram na F1 entre 1950 e 2021?":
+			"R1" - "2", t;
+			"R2" - "1", f;
+			"R3" - "0", f;
+			"R4" - "5", f;
+	;
+	qm - "Questao10" - 1 - "Corresponde a equipa atual a um dos seus nomes anteriores":
+			left  - "L1" - "Aston Martin" +  "L2" - "Alpha Tauri" + "L3" - "Jaguar" + "L4" - "Mercedes" ;
+			right - "R1" - "Red Bull" + "R2" - "Spyker" + "R3" - "Minardi" + "R4" - "BAR Honda";
+			Match -  "R1"-"L3" , "R2"-"L1", "R3"-"L2" , "R4"-"L4";
+			
+end

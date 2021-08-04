@@ -1,0 +1,33 @@
+Theme : "Futebol"
+	qmc - "Questao1" - 2 - "Vencedor campeonato Mundo 2018?":
+			"R1" - "França", t;
+			"R2" - "Portugal", f;
+			"R3" - "Croacia", f;
+			"R4" - "Inglaterra", f;
+	;
+	qmc - "Questao2" - 3 - "Melhor marcador LIGA NOS 20/21?":
+			"R1" - "Pote", t;
+			"R2" - "Seferovic", f;
+			"R3" - "Taarabt", f;
+			"R4" - "Quaresma", f;
+	;
+	qmc - "Questao3" - 4 - "Campeao Liga Francesa 20/21?":
+			"R1" - "Lille", t;
+			"R2" - "PSG", f;
+			"R3" - "Lyon", f;
+			"R4" - "Marseille", f;
+			"R5" - "Nantes", f;
+	;
+	qm - "Questao4" - 2 - "Corresponde o clube ao pais":
+			left  - "L1" - "Tondela" +  "L2" - "Barcelona" + "L3" - "Toulouse" + "L4" - "Juventus";
+			right  -  "R1" - "Portugal" + "R2" - "Espanha" + "R3" - "Franca" + "R4" - "Italia";
+			Match -  "R1"-"L1" , "R2"-"L2", "R3"-"L3", "R4"-"L4";
+	;
+	qmc - "Questao5" - 3 - "Finalistas Mundial 2014":
+			"R1" - "França", f;
+			"R2" - "Alemanha", t;
+			"R3" - "Somália", f;
+			"R4" - "Tunisia", f;
+	;
+end
+

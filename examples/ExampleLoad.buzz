@@ -1,0 +1,60 @@
+/*Neste exemplo usamos as perguntas do banco de dados */
+create quiz FutebolQuiz
+
+load from "Futebol.buzzqb":
+	Questao1 as questao1
+	Questao2 as questao2
+	Questao3 as questao3
+	Questao4 as questao4
+	Questao5 as questao5
+end
+
+FutebolQuiz add questao1
+FutebolQuiz add questao2
+FutebolQuiz add questao3
+FutebolQuiz add questao4
+FutebolQuiz add questao5
+
+create quiz F1Quiz
+
+load from "Formula1.buzzqb":
+	Questao1 as q1
+    	Questao4 as q2
+    	Questao5 as q3
+    	Questao7 as q4
+    	Questao10 as q5
+end
+
+F1Quiz add q1
+F1Quiz add q2
+F1Quiz add q3
+F1Quiz add q4
+F1Quiz add q5
+
+list useranswers = group: end
+
+text answer = ""
+showln("Vamos começar o Quiz com perguntas sobre Futebol :)")
+foreach question q in FutebolQuiz:
+    showln(q)
+    answer = input ""
+    useranswers add answer
+end
+
+showln("Vamos passar agora a perguntas de Formula 1 :)")
+foreach question q in F1Quiz:
+    showln(q)
+    answer = input ""
+    useranswers add answer
+end
+
+number n = 0
+foreach number i in 10:
+    n = i + 1
+    show("Your answer to question number " + n + ": ")
+    showln(useranswers[i])
+end
+
+showln("Obrigado")
+
+endprogram

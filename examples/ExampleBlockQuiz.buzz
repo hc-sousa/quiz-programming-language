@@ -1,0 +1,109 @@
+function number score_in_percent(number scor, number max):
+  number n = scor / max
+  ret n * 100
+end
+
+create blockquiz quiz1:
+  goback = t
+end
+create block block1
+create block block2
+
+create qmc q1:
+  description = "1+1?"
+  theme = "math"
+  score = 1
+  options = group:  
+    "zero" -> "0"
+    "one" -> "1"
+    "two" -> "2"
+    "three" -> "3"
+  end;
+  correct = "two";
+  difficulty = 1;
+end; q1 shuffle;
+
+create qmc q2:
+  description = "Who is the impostor?"
+  theme = "amongus"
+  score = 2
+  options = group:  
+    "r" -> "red"
+    "b" -> "blue"
+    "l" -> "lime"
+    "y" -> "yellow"
+  end;
+  correct = "r";
+  difficulty = 3;
+end
+
+create qmc q3:
+  description = "Who is the current president of the US?"
+  theme = "usa"
+  score = 1
+  options = group:  
+    "duck" -> "Donald Duck"
+    "trump" -> "Donald Trump"
+    "biden" -> "Joe Biden"
+    "mama" -> "Joe Mama"
+    "based" -> "Tino of Rans"
+  end
+  correct = "biden"
+  difficulty = 3
+end
+
+q3 shuffle
+
+text match_the = "match the"
+create qm q4:
+  description = match_the + " limits"
+  score = 3
+  theme = "math"
+  difficulty = 4
+  left = group:
+    "L1" -> "lim x->0 (sin(x)/x)"
+    "L2" -> "lim x->0+ (1/x)"
+    "L3" -> "lim x->0- (7/x^3)"
+  end
+  right = group:
+    "R1" -> "0"
+    "R2" -> "1"
+    "R3" -> "+inf"
+    "R4" -> "-inf"
+  end
+  match = group:
+    "L1" : "R2"
+    "L2" : "R3"
+    "L3" : "R4"  
+  end
+end
+
+block1 add q1
+block1 add q2
+block2 add q3
+block2 add q4
+
+quiz1 add block1
+quiz1 add block2
+
+quiz1 execute
+
+number s = quiz1.userscore
+showln("Your score: " + s)
+showln("In %: " + score_in_percent(s, quiz1.quizscore))
+
+text feedback = input "Please enter your feedback for our quiz!\n"
+showln("Thanks!")
+
+s = score_in_percent(s, quiz1.quizscore)
+if s < 50:
+  showln("Estudasses")
+else:
+  if s < 70:
+    showln("Podia ter corrido melhor")
+  else:
+    showln("Well done")
+  end
+end
+
+endprogram

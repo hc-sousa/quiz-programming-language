@@ -1,0 +1,176 @@
+/*Neste documento encontram-se os vários exemplos usados para testar cada visitor do Semantic, havendo situações em que corre bem e situações que devem correr mal */
+/*visitDefQuiz -- testado e passa */
+ 
+number numb1 = 3;
+create quiz numb1; 
+
+number numb2 = 1;
+create block numb2
+
+number numb3 = 0;
+create blockquiz numb3:
+end
+
+list x = group: 1;2;3; end
+y add 6 
+create block bloc1
+bloc1 add 1 
+create quiz q1;
+q1 add 2  
+
+list x = group: 1;2;3; end
+y remove 6 
+create block bloco1
+bloco1 remove 1 
+create quiz q1;
+q1 remove 2  
+
+boco1 shuffle;
+number numb4 = 4;
+number4 shuffle;
+
+number numb5=0
+numb5 execute
+var1 execute
+
+number num6 = 1;
+create qmc numb6:
+end
+
+number numb7 = 1;
+create qm numb7:
+end
+
+create qmc question1:
+options = group: 1;2;3;4; end
+correct = group: 3;4; end
+end
+
+create qmc quest1:
+description = "descrição aqui"
+theme = "tema aqui"
+difficulty = "2"
+score = "3"
+end
+
+create qm questi1:
+left = group: 1;2;3;4; end
+right = group: 1;2;3;4; end
+match = 1;
+end
+
+create qm questio1:
+description = "descrição aqui"
+theme = "tema aqui"
+difficulty = "2"
+score = "3"
+end
+
+ppp = 4
+number pq = 4;
+pq = "ola";
+number p=4;
+p += 5;
+text t1 = "ola"
+t1 += " adeus"
+p += t1;
+bool b1 = t
+b1 += 2
+
+number numbe1=10
+numbe1 -= "ola"
+text te1 = "adeus"
+te1 -= 2
+
+number numbe2 = "ola"
+
+text te2 = 1
+
+
+list listX = 1;
+
+
+bool tr = 1
+
+
+show(p12p) 
+
+
+number n1=6;
+number numero2 = p[1]
+list listY = group: 1;4;3;2; end
+number num3 = x["dois"]
+
+create quiz perg1;
+text str1 = "adeus" + q1
+text str2 = "ola" / "adeus"
+
+text str3 = input olaolaola;
+
+number alg1 = 3
+function nothing x():
+number alg2=6
+end
+xF()
+function number xFF():
+number al2=6
+text ok = "hey"
+ret ok  
+end
+function number xFunc(number p,text g):
+varP=7
+ret varP
+end
+
+list xlist = group: 1;x;2;4; end
+ 
+list xlistx = group:
+"R1" -> 2
+"R3" -> 3
+end
+
+list xlistu = group:
+"R1" : 2
+"R3" : 3
+end
+
+number al11 = q1 checkanswer "Ola";
+text str11 = 3;
+number al1 = q1 checkanswer "ola";
+create qmc que1: end
+text tex11 = q1 checkanswer ola
+
+create qmc quest11:
+options = group: 1;2;3;4; end
+correct = "2"
+end
+bool boole1 = q1.goback
+number nunu=0;
+text texto1 = p.theme
+
+create qmc pergun1:
+options = group: 1;2;3;4; end
+correct = "2"
+end
+q1.goback = t
+number algar=0;
+text texto61 = p.theme
+create qmc questao11:
+options = group: 1;2;3;4; end
+correct = "2"
+end
+q1.correct = 3
+
+load from string:
+question1 as qmc1;
+end
+number pppp1=1;
+load from "string":
+idquestion as pjk1
+end
+
+foreach number h in l:
+number ph=5
+end
+
+endprogram

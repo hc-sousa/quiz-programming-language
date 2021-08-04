@@ -1,0 +1,1211 @@
+typeValue ::= [
+    "number": "Double",
+    "text": "String",
+    "boolean": "boolean",
+    "t": "true",
+    "f": "false"
+]
+
+module(name, instruction, func) ::= 
+<<
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.*;
+import java.text.*;
+import java.io.*;
+
+public class <name> {
+    public static FileWriter WRITER;
+
+    public static void main(String[] args) {
+        try {
+            WRITER = new FileWriter("quizinput_" + new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()) + ".txt");
+        } catch (IOException e) {
+            System.err.println("Error creating FileWriter.");
+        }
+        <stats(instruction)>
+    }
+
+    private static String input(String prompt) {
+        Scanner sc = new Scanner(System.in);
+        System.out.print(prompt);
+        String ret = sc.nextLine();
+        try {
+            WRITER.write(prompt + ": " + ret + "\n");
+            WRITER.flush();
+        } catch (IOException e) {
+            System.err.println("Error writing to File.");
+        }
+        return ret;
+    }
+
+    <functions(func)>
+}
+
+class Block {
+    public String id;
+    public List\<Question> questions;
+    public int idx;
+    public Double score;
+    public List\<Double> questionUserScores;
+
+    public Block(String id, List\<Question> questions) {
+        this.id = id;
+        this.questions = questions;
+        questionUserScores = new ArrayList\<>();
+        for (Question q : questions) {
+            score += q.getScore();
+            questionUserScores.add(0.0);
+        }
+        idx = 0;
+        score = 0.0;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s (%d questions)", id, questions.size());
+    }
+
+    public Block(String id) {
+        this(id, new ArrayList\<>());
+    }
+
+    public void add(Question question) {
+        String qId = question.getId();
+        for (Question q : questions) {
+            if (q.getId().equals(qId)) {
+                System.out.printf("Question with ID '%s'  already exists in block '%s'.\n", qId, id);
+                return;
+            }
+        }
+        questions.add(question);
+        questionUserScores.add(0.0);
+        score += question.getScore();
+    }
+
+    public void remove(Question q) {
+        remove(q.getId());
+    }
+
+    public void remove(String qId) {
+        int i;
+        boolean found = false;
+        for (i = 0; i \< questions.size(); i++) {
+            if (questions.get(i).getId().equals(qId)) {
+                found = true;
+                break;
+            }
+        }
+        if (found) {
+            score -= questions.get(i).getScore();
+            questions.remove(i);
+        } else {
+            System.err.printf(
+                "Couldn't remove question '%s' from block '%s': block has no question with ID '%s'\n",
+                qId, id, qId
+            );
+        }
+    }
+
+    public void execute() {
+        Scanner sc = new Scanner(System.in);
+        System.out.println("Block " + id);
+        System.out.println(
+                ">'{question ID}' to navigate to another question.\n"
+                        + "'{answer}' to answer the current question.\n"
+                        + "    QMC Example: A1\n"
+                        + "    QM Example: L1-R1,L2-R2,L3-R3\n"
+                        + "'.' to leave this block."
+        );
+        String prefix;
+        while (true) {
+            for (int i = 0; i \< questions.size(); i++) {
+                prefix = i == idx ? "> " : "  ";
+                System.out.println(prefix + questions.get(i).getId());
+            }
+            Question current = questions.get(idx);
+            System.out.println(current);
+            String input = sc.nextLine();
+            try {
+                <name>.WRITER.write("Question " + current.getId() + ": " + input + "\n");
+                <name>.WRITER.flush();
+            } catch (IOException e) {
+                System.err.println("Error writing to File.");
+            }
+            if (input.length() == 0)
+                input = "\0";
+            char startChar = input.charAt(0);
+            if (startChar == '>') { // go to another question
+                String qId = input.substring(1);
+                idx = getQuestionIdxById(qId);
+                current = questions.get(idx);
+            } else if (startChar == '.') { // finish this block
+                return;
+            } else { // answer the current question
+                if (input.equals("\0"))
+                    input = "";
+                Double answerScore = current.answerScore(input);
+                questionUserScores.set(idx, answerScore);
+                if (idx \< questions.size() - 1)
+                    idx++;
+            }
+        }
+    }
+    
+    public void shuffle() {
+        Collections.shuffle(questions);
+    }
+
+    private int getQuestionIdxById(String qId) {
+        for (int i = 0; i \< questions.size(); i++)
+            if (questions.get(i).getId().equals(qId))
+                return i;
+        System.out.println("Invalid question ID.");
+        return idx;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public List\<Question> getQuestions() {
+        return questions;
+    }
+
+    public int getIdx() {
+        return idx;
+    }
+
+    public Double getScore() {
+        return score;
+    }
+
+    public List\<Double> getQuestionUserScores() {
+        return questionUserScores;
+    }
+}
+
+class BlockQuiz {
+    public String id;
+    public List\<Block> blocks;
+    public boolean goback;
+    public Double quizscore;
+    public int idx;
+    public Double userscore;
+
+    public BlockQuiz(String id, List\<Block> blocks, boolean goback) {
+        this.id = id;
+        this.blocks = blocks;
+        this.goback = goback;
+        quizscore = 0.0;
+        for (Block b : blocks)
+            quizscore += b.getScore();
+        idx = 0;
+        userscore = 0.0;
+    }
+
+    public BlockQuiz(String id, boolean goback) {
+        this(id, new ArrayList\<>(), goback);
+    }
+
+    public BlockQuiz(String id) {
+        this(id, new ArrayList\<>(), true);
+    }
+
+    public void add(Block block) {
+        String blockId = block.getId();
+        for (Block b : blocks) {
+            if (b.getId().equals(blockId)) {
+                System.out.printf("Block with ID '%s' already exists in quiz '%s'.\n", blockId, id);
+                return;
+            }
+        }
+        blocks.add(block);
+        quizscore += block.getScore();
+    }
+
+    public void remove(Block b) {
+        remove(b.getId());
+    }
+
+    public void remove(String bId) {
+        int i;
+        boolean found = false;
+        for (i = 0; i \< blocks.size(); i++) {
+            if (blocks.get(i).getId().equals(bId)) {
+                found = true;
+                break;
+            }
+        }
+        if (found) {
+            quizscore -= blocks.get(i).getScore();
+            blocks.remove(i);
+        } else {
+            System.err.printf(
+                "Couldn't remove block '%s' from blockquiz '%s': blockquiz has no block with ID '%s'\n",
+                bId, id, bId
+            );
+        }
+    }
+
+    public Double getUserScore() {
+        Double score = 0.0;
+        for (Block block : blocks)
+            for (Double qScore : block.getQuestionUserScores())
+                score += qScore;
+        return score;
+    }
+
+    public Double getScore() {
+        return quizscore;
+    }
+
+    public void execute() {
+        Scanner sc = new Scanner(System.in);
+        String usage = "Quiz " + id + "\n'>{block ID}' to navigate to another block.\n" + "'.' to submit quiz.";
+        System.out.println(usage);
+        boolean printBlocks = true;
+        String prefix;
+        while (true) {
+            if (printBlocks)
+                System.out.println(blocksString());
+            printBlocks = true;
+            Block current = blocks.get(idx);
+            current.execute();
+            System.out.println(blocksString());
+
+            String input = sc.nextLine();
+            try {
+                <name>.WRITER.write(input + "\n");
+                <name>.WRITER.flush();
+            } catch (IOException e) {
+                System.err.println("Error writing to File.");
+            }
+            char startChar = input.charAt(0);
+            if (startChar == '.') {
+                userscore = getUserScore();
+                return;
+            } else if (startChar == '>') {
+                String blockId = input.substring(1);
+                int newIdx = getBlockIdxById(blockId);
+                if (!goback && newIdx \< idx) {
+                    System.out.println("Cannot go back to previous blocks.");
+                    printBlocks = false;
+                } else {
+                    idx = newIdx;
+                }
+            } else {
+                System.out.println("Invalid input.");
+            }
+        }
+    }
+
+    public void shuffle() {
+        Collections.shuffle(blocks);
+    }
+
+    private String blocksString() {
+        StringBuilder sb = new StringBuilder(id).append(" - blocks:\n");
+        String prefix;
+        for (int i = 0; i \< blocks.size(); i++) {
+            if (!goback && i \< idx)
+                prefix = "# "; // # means the user can't navigate to that block
+            else if (i == idx)
+                prefix = "> ";
+            else
+                prefix = "  ";
+            sb.append(prefix).append(blocks.get(i).getId()).append("\n");
+        }
+        return sb.toString();
+    }
+
+    private int getBlockIdxById(String bId) {
+        for (int i = 0; i \< blocks.size(); i++)
+            if (blocks.get(i).getId().equals(bId))
+                return i;
+        System.out.println("Invalid block ID.");
+        return idx;
+    }
+}
+
+class Match {
+    public String leftOptionId;
+    public String rightOptionId;
+
+    public Match(String leftOptionId, String rightOptionId) {
+        this.leftOptionId = leftOptionId;
+        this.rightOptionId = rightOptionId;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s : %s", leftOptionId, rightOptionId);
+    }
+
+    public String getLeftOptionId() {
+        return leftOptionId;
+    }
+
+    public void setLeftOptionId(String leftOptionId) {
+        this.leftOptionId = leftOptionId;
+    }
+
+    public String getRightOptionId() {
+        return rightOptionId;
+    }
+
+    public void setRightOptionId(String rightOptionId) {
+        this.rightOptionId = rightOptionId;
+    }
+}
+
+class Option {
+    public String id;
+    public String description;
+
+    public Option(String id, String description) {
+        this.id = id;
+        this.description = description;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%-5s%-100s", id, description);
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Option option = (Option) o;
+        return Objects.equals(id, option.id) && Objects.equals(description, option.description);
+    }
+}
+
+class QM extends Question {
+    public List\<Option> leftOptions, rightOptions;
+    public Map\<Option, Option> matches = new HashMap\<>(); // maps left options to right options
+    public List\<Match> match;
+
+    public QM() {
+        type = "qm";
+    }
+
+    public void shuffle() {
+        Collections.shuffle(leftOptions);
+        Collections.shuffle(rightOptions);
+    }
+
+    public void remove(Option option) {
+        leftOptions.remove(option);
+        rightOptions.remove(option);
+        matches.remove(option);
+        for (Option opt : matches.keySet())
+            if (matches.get(opt).equals(option))
+                matches.remove(opt);
+    }
+
+    public void remove(String optionId) {
+        leftOptions.removeIf(option -> option.getId().equals(optionId));
+        rightOptions.removeIf(option -> option.getId().equals(optionId));
+        matches.remove(getOptionById(optionId));
+        for (Option opt : matches.keySet())
+            if (matches.get(opt).getId().equals(optionId))
+                matches.remove(opt);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(description).append("\n");
+        int leftSize = leftOptions.size(), rightSize = rightOptions.size();
+        int minSize = Math.min(leftSize, rightSize);
+        Option left, right;
+        for (int i = 0; i \< minSize; i++) {
+            left = leftOptions.get(i);
+            right = rightOptions.get(i);
+            sb.append(String.format(
+                    "%-5s%-100s%5s%-5s%-100s\n",
+                    left.getId(), left.getDescription(), "",
+                    right.getId(), right.getDescription()
+            ));
+        }
+        if (leftSize > rightSize) {
+            for (int i = minSize; i \< leftSize; i++) {
+                left = leftOptions.get(i);
+                sb.append(String.format(
+                        "%-5s%-100s%-110s\n",
+                        left.getId(), left.getDescription(), ""
+                ));
+            }
+        }
+        else if (rightSize > leftSize) {
+            for (int i = minSize; i \< rightSize; i++) {
+                right = rightOptions.get(i);
+                sb.append(String.format(
+                        "%-110s%-5s%-100s\n", "",
+                        right.getId(), right.getDescription()
+                ));
+            }
+        }
+        return sb.toString();
+    }
+
+    @Override
+    public Double answerScore(String input) {
+        setMatchesById(match);
+        if (input.equals(""))
+            return 0.0;
+        Double answerScore = 0.0;
+        String[] inputMatches = input.split(",");
+        String[] matchSplit;
+        Option left, right;
+        int correctMatches = 0;
+        int wrongMatches = 0;
+        if (input.indexOf("-") >= 0) {
+            for (String match : inputMatches) {
+                matchSplit = match.split("-");
+                left = getOptionById(matchSplit[0]);
+                right = getOptionById(matchSplit[1]);
+                if (!matches.containsKey(left) || !matches.get(left).equals(right))
+                    wrongMatches++;
+                else
+                    correctMatches++;
+            }
+        } else
+            return 0.0;
+
+        int qmMatches = matches.keySet().size();
+        int blankMatches = qmMatches - correctMatches - wrongMatches;
+        double wrongPenalty = 0; // this could be an attribute, unspecified in pdf
+        Double matchScore = score / qmMatches; // score of a correct match
+        answerScore += correctMatches * matchScore;
+        answerScore -= wrongMatches * matchScore * wrongPenalty;
+        boolean allowNegativeScores = true; // could be an attribute
+        if (!allowNegativeScores)
+            answerScore = Math.max(score, 0);
+        return answerScore; // probably don't want negative scores
+    }
+
+    public String getDefinition() {
+        StringBuilder sb = new StringBuilder("QM ")
+        .append(id).append(" = QMBuilder.createQM()");
+        if (description != null)
+            sb.append("\n        .description(\"").append(description).append("\")");
+        if (score != null)
+            sb.append("\n        .score(").append(score).append(")");
+        if (difficulty != null)
+            sb.append("\n        .difficulty(").append(difficulty).append(")");
+        if (leftOptions != null) {
+            sb.append("\n        .leftOptions(Arrays.asList(");
+            for (Option opt : leftOptions) {
+                sb.append("\n                new Option(\"").append(opt.getId())
+                .append(", \"").append(opt.getDescription()).append("\"),");
+            }
+            sb.append("\n        ))");
+        }
+        if (rightOptions != null) {
+            sb.append("\n        .rightOptions(Arrays.asList(");
+            for (Option opt : rightOptions) {
+                sb.append("\n                new Option(\"").append(opt.getId())
+                .append(", \"").append(opt.getDescription()).append("\"),");
+            }
+            sb.append("\n        ))");
+        }
+        if (matches != null) {
+            sb.append("\n        .matchesById(Arrays.asList(");
+            for (Option opt : matches.keySet()) {
+                String optId = opt.getId();
+                sb.append("\n                new Match(\"").append(optId)
+                .append("\", \"").append(matches.get(getOptionById(optId)).getId()).append("\"),");
+            }
+            sb.append("\n        ))");
+        }
+        sb.append("\n        .build()");
+        return sb.toString();
+    }
+
+    public List\<Option> getLeftOptions() {
+        return leftOptions;
+    }
+
+    public void setLeftOptions(List\<Option> leftOptions) {
+        this.leftOptions = leftOptions;
+    }
+
+    public List\<Option> getRightOptions() {
+        return rightOptions;
+    }
+
+    public void setRightOptions(List\<Option> rightOptions) {
+        this.rightOptions = rightOptions;
+    }
+
+    public Map\<Option, Option> getMatches() {
+        return matches;
+    }
+
+    public void setMatches(Map\<Option, Option> matches) {
+        this.matches = matches;
+    }
+
+    public void setMatchesById(List\<Match> matchList) {
+        for (Match m : matchList) {
+            matches.put(getOptionById(m.getLeftOptionId()), getOptionById(m.getRightOptionId()));
+        }
+        match = matchList;
+    }
+
+    public void setMatchesById(Map\<String, String> matchesId) {
+        String rightId;
+        for (String leftId : matchesId.keySet()) {
+            rightId = matchesId.get(leftId);
+            matches.put(getOptionById(leftId), getOptionById(rightId));
+        }
+    }
+
+    private Option getOptionById(String id) {
+        for (Option option : leftOptions)
+            if (option.getId().equals(id))
+                return option;
+        for (Option option : rightOptions)
+            if (option.getId().equals(id))
+                return option;
+        return null;
+    }
+}
+
+final class QMBuilder {
+    protected String id;
+    protected String description;
+    protected String theme;
+    protected Integer difficulty;
+    protected Double score;
+    protected List\<Option> leftOptions, rightOptions;
+    // protected Map\<Option, Option> matches;
+    protected Map\<String, String> matchesById;
+    protected List\<Match> matchList;
+
+    private QMBuilder() {
+    }
+
+    public static QMBuilder createQM() {
+        return new QMBuilder();
+    }
+
+    public QMBuilder id(String id) {
+        this.id = id;
+        return this;
+    }
+
+    public QMBuilder description(String description) {
+        this.description = description;
+        return this;
+    }
+
+    public QMBuilder theme(String theme) {
+        this.theme = theme;
+        return this;
+    }
+
+    public QMBuilder difficulty(Integer difficulty) {
+        this.difficulty = difficulty;
+        return this;
+    }
+
+    public QMBuilder difficulty(Double difficulty) {
+        this.difficulty = (int) difficulty.doubleValue();
+        return this;
+    }
+
+
+    public QMBuilder score(Double score) {
+        this.score = score;
+        return this;
+    }
+
+    public QMBuilder score(Integer score) {
+        this.score = (double) score.intValue();
+        return this;
+    }
+
+    public QMBuilder leftOptions(List\<Option> leftOptions) {
+        this.leftOptions = leftOptions;
+        return this;
+    }
+
+    public QMBuilder rightOptions(List\<Option> rightOptions) {
+        this.rightOptions = rightOptions;
+        return this;
+    }
+
+    public QMBuilder matchesById(Map\<String, String> matchesById) {
+        this.matchesById = matchesById;
+        return this;
+    }
+
+    public QMBuilder matchesById(List\<Match> matchList) {
+        this.matchList = matchList;
+        return this;
+    }
+
+    public QM build() {
+        QM qM = new QM();
+        qM.setId(id);
+        qM.setDescription(description);
+        qM.setTheme(theme);
+        qM.setDifficulty(difficulty);
+        qM.setScore(score);
+        qM.setLeftOptions(leftOptions);
+        qM.setRightOptions(rightOptions);
+        if (matchList != null)
+            qM.setMatchesById(matchList);
+        else if (matchesById != null)
+            qM.setMatchesById(matchesById);
+        return qM;
+    }
+}
+
+class QMC extends Question {
+    public List\<Option> options;
+    public Option correctOption;
+    public String correct;
+
+    public QMC() {
+        type = "qmc";
+    }
+
+    public void shuffle() {
+        Collections.shuffle(options);
+    }
+
+    public void remove(Option option) {
+        remove(option.getId());
+    }
+
+    public void remove(String optionId) {
+        if (correctOption.getId().equals(optionId)) {
+            System.out.println("Warning: removed correct option.");
+            correctOption = null;
+        }
+        options.removeIf(option -> option.getId().equals(optionId));
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(description).append("\n");
+        for (Option opt : options)
+            sb.append(opt.getId()).append(" - ").append(opt.getDescription()).append("\n");
+        return sb.toString();
+    }
+
+    @Override
+    public Double answerScore(String input) {
+        if (correct != null) setCorrectOptionById(correct);
+        if (input.equals(""))
+            return 0.0;
+        // verify if user gave an option that actually exists
+        boolean exists = false;
+        for (Option option : options) {
+            if (option.getId().equals(input)) {
+                exists = true;
+                break;
+            }
+        }
+        if (!exists)
+            return null;
+
+        double wrongPenalty = 0; // this could be an attribute (unspecified in pdf)
+
+        if (input.equals(correctOption.getId()))
+            return score;
+        return -wrongPenalty;
+    }
+
+    public String getDefinition() {
+        StringBuilder sb = new StringBuilder("QMC ")
+        .append(id).append(" = QMCBuilder.createQMC()");
+        if (description != null)
+            sb.append("\n        .description(\"").append(description).append("\")");
+        if (score != null)
+            sb.append("\n        .score(").append(score).append(")");
+        if (difficulty != null)
+            sb.append("\n        .difficulty(").append(difficulty).append(")");
+        if (options != null) {
+            sb.append("\n        .options(Arrays.asList(");
+            for (Option opt : options) {
+                sb.append("\n                new Option(\"").append(opt.getId())
+                .append(", \"").append(opt.getDescription()).append("\"),");
+            }
+            sb.append("\n        ))");
+        }
+        if (correctOption != null)
+            sb.append("\n        .correctOptionId(\"").append(correctOption.getId()).append("\")");
+        sb.append("\n        .build();");
+        return sb.toString();
+    }
+
+    public List\<Option> getOptions() {
+        return options;
+    }
+
+    public void setOptions(List\<Option> options) {
+        this.options = options;
+    }
+
+    public Option getCorrectOption() {
+        return correctOption;
+    }
+
+    public void setCorrectOption(Option correctOption) {
+        this.correctOption = correctOption;
+    }
+
+    public void setCorrectOptionById(String optId) {
+        for (Option opt : options) {
+            if (opt.getId().equals(optId)) {
+                correctOption = opt;
+                correct = optId;
+                return;
+            }
+        }
+        System.out.printf("QMC '%s': option '%s' not found.\n", id, optId);
+    }
+}
+
+
+final class QMCBuilder {
+    protected String id;
+    protected String description;
+    protected String theme;
+    protected Integer difficulty;
+    protected Double score;
+    protected List\<Option> options;
+    protected String correctOptionId;
+
+    private QMCBuilder() {
+    }
+
+    public static QMCBuilder createQMC() {
+        return new QMCBuilder();
+    }
+
+    public QMCBuilder id(String id) {
+        this.id = id;
+        return this;
+    }
+
+    public QMCBuilder description(String description) {
+        this.description = description;
+        return this;
+    }
+
+    public QMCBuilder theme(String theme) {
+        this.theme = theme;
+        return this;
+    }
+
+    public QMCBuilder difficulty(Integer difficulty) {
+        this.difficulty = difficulty;
+        return this;
+    }
+
+    public QMCBuilder difficulty(Double difficulty) {
+        this.difficulty = (int) difficulty.doubleValue();
+        return this;
+    }
+
+    public QMCBuilder score(Double score) {
+        this.score = score;
+        return this;
+    }
+
+    public QMCBuilder score(Integer score) {
+        this.score = (double) score.intValue();
+        return this;
+    }
+
+    public QMCBuilder options(List\<Option> options) {
+        this.options = options;
+        return this;
+    }
+
+    public QMCBuilder correctOptionId(String correctOptionId) {
+        this.correctOptionId = correctOptionId;
+        return this;
+    }
+
+    public QMC build() {
+        QMC qmc = new QMC();
+        qmc.setId(id);
+        qmc.setDescription(description);
+        qmc.setTheme(theme);
+        qmc.setDifficulty(difficulty);
+        qmc.setScore(score);
+        qmc.setOptions(options);
+        if (options != null)
+            qmc.setCorrectOptionById(correctOptionId);
+        return qmc;
+    }
+}
+
+abstract class Question {
+    protected String id;
+    protected String description;
+    protected String theme;
+    protected Integer difficulty;
+    protected Double score;
+    protected String type;
+
+    abstract Double answerScore(String input);
+    abstract void remove(String optionId);
+    abstract void remove(Option option);
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Integer getDifficulty() {
+        return difficulty;
+    }
+
+    public void setDifficulty(Integer difficulty) {
+        this.difficulty = difficulty;
+    }
+
+    public Double getScore() {
+        return score;
+    }
+
+    public void setScore(Double score) {
+        this.score = score;
+    }
+
+    public String getTheme() {
+        return theme;
+    }
+
+    public void setTheme(String theme) {
+        this.theme = theme;
+    }
+}
+
+class Quiz {
+    public String id;
+    public List\<Question> questions;
+    public Double score;
+
+    public Quiz(String id, List\<Question> questions) {
+        this.id = id;
+        this.questions = questions;
+        for (Question q : questions)
+            score += q.getScore();
+    }
+
+    public Quiz(String id) {
+        this(id, new ArrayList\<>());
+    }
+
+    public void add(Question question) {
+        String qId = question.getId();
+        for (Question q : questions) {
+            if (q.getId().equals(qId)) {
+                System.out.printf("Question with ID '%s' already exists in quiz '%s'.\n", qId, id);
+                return;
+            }
+        }
+        questions.add(question);
+    }
+
+    public void removeQuestionById(String qId) {
+        int idx = getQuestionIdxById(qId);
+        if (idx != -1)
+            questions.remove(idx);
+    }
+
+    public Double getScore() {
+        return score;
+    }
+
+    private int getQuestionIdxById(String qId) {
+        for (int i = 0; i \< questions.size(); i++)
+            if (questions.get(i).getId().equals(qId))
+                return i;
+        System.out.println("Invalid question ID.");
+        return -1;
+    }
+}
+>>
+
+
+inp(prompt) ::= 
+<<
+input(<prompt>)
+>>
+
+functions(func) ::= 
+<<
+<if(func)><func; separator="\n\n"><endif>
+>>
+
+func(name, args, instruction, return) ::= 
+<<
+public static <return> <name>(<funcHeader(args)>)  {
+    <stats(instruction)>
+}
+>>
+
+funcHeader(args) ::=
+<<
+<if(args)><args; separator=", "><endif>
+>>
+
+funcCall(func, args) ::=
+<<
+<func>(<if(args)><args; separator=", "><endif>)
+>>
+
+stats(instruction) ::= 
+<<
+<if(instruction)><instruction; separator="\n"><endif>
+>>
+
+value(val) ::=
+<<
+<val>
+>>
+
+arraysAsList(value) ::= 
+<<
+Arrays.asList(<if(value)><value; separator=", "><endif>)
+>>
+
+declGroup(type, var, expr) ::= 
+<<
+<type> <var> = new ArrayList\<>(<expr>);
+>>
+
+quizAdd(var, value) ::=
+<<
+<var>.add(<value>);
+>>
+
+quizRm(var, value) ::=
+<<
+<var>.remove(<value>);
+>>
+
+questShuffle(var) ::=
+<<
+<var>.shuffle();
+>>
+
+attrAccess(expr, attr) ::=
+<<
+<expr>.<attr>
+>>
+
+attrAssign(expr, attr, val) ::=
+<<
+<expr>.<attr> = <val>;
+>>
+
+questSetDesc(var, value) ::=
+<<
+<var>.setDescription(<value>);
+>>
+
+methods(var, method, args) ::=
+<<
+<var>.<method>(<if(args)><args; separator=", "><endif>)
+>>
+
+execute(var) ::=
+<<
+<var>.execute();
+>>
+
+QMCcreate(var, id, attr) ::=
+<<
+QMC <var> = QMCBuilder.createQMC()
+            .id(<id>)
+            <if(attr)><attr><endif>
+            .build();
+>>
+
+QMCcreateAttr(v_description, v_theme, v_score, v_difficulty, v_options, v_correct) ::=
+<<
+<if(v_description)>.description(<v_description>)<endif>
+<if(v_theme)>.theme(<v_theme>)<endif>
+<if(v_score)>.score(<v_score>)<endif>
+<if(v_difficulty)>.difficulty(<v_difficulty>)<endif>
+<if(v_options)>.options(<v_options>)<endif>
+<if(v_correct)>.correctOptionId(<v_correct>)<endif>
+>>
+
+QMcreate(var, id, attr) ::=
+<<
+QM <var> = QMBuilder.createQM()
+            .id(<id>)
+            <if(attr)><attr><endif>
+            .build();
+>>
+
+QMcreateAttr(v_description, v_theme, v_score, v_difficulty, v_left, v_right, v_match) ::=
+<<
+<if(v_description)>.description(<v_description>)<endif>
+<if(v_theme)>.theme(<v_theme>)<endif>
+<if(v_score)>.score(<v_score>)<endif>
+<if(v_difficulty)>.difficulty(<v_difficulty>)<endif>
+<if(v_left)>.leftOptions(<v_left>)<endif>
+<if(v_right)>.rightOptions(<v_right>)<endif>
+<if(v_match)>.matchesById(<v_match>)<endif>
+>>
+
+ret(value) ::=
+<<
+return <value>;
+>>
+
+print(value) ::=
+<<
+System.out.print(<value>);
+>>
+
+println(value) ::=
+<<
+System.out.println(<value>);
+>>
+
+decl(type,var,value) ::= 
+<<
+<type> <var><if(value)> = <value><endif>;
+>>
+
+assign(var, value) ::=
+<<
+<var> = <value>;
+>>
+
+plusEquals(var, value) ::=
+<<
+<var> += <value>;
+>>
+
+minusEquals(var, value) ::=
+<<
+<var> -= <value>;
+>>
+
+and_or_condition(expr1, op, expr2) ::= 
+<<
+<expr1> <op> <expr2>
+>>
+
+binaryOperation(type, var, e1, op, e2) ::= "<decl(type,var,[e1,\" \",op,\" \",e2])>"
+
+equals(var1, var2) ::= 
+<<
+<var1>.equals(<var2>)
+>>
+
+foreach(type, var1, var2, instruction) ::= 
+<<
+
+for (<type> <var1> : <var2>) {
+    <stats(instruction)>
+}
+
+>>
+
+fori(var1, var2, instruction) ::= 
+<<
+
+for (int <var1> = 0; <var1> \< <var2>; <var1>++) {
+    <stats(instruction)>
+}
+
+>>
+
+ifCondition(condition, instruction) ::= 
+<<
+if (<if(condition)><condition; separator=" "><endif>) {
+	<if(instruction)><instruction; separator="\n"><endif>
+}
+>>
+
+elseCondition(instruction) ::= <<
+ else {
+	<if(instruction)><instruction; separator="\n"><endif>
+}
+>>
+
+condition(condition) ::= 
+<<
+<condition>
+>>
+
+exprOp(e1, op, e2) ::=
+<<
+<e1> <op> <e2>
+>>
+
+indexAccess(e1, e2) ::=
+<<
+<e1>.get(<e2>)
+>>
+
+checkAnswer(var, expr) ::=
+<<
+<var>.answerScore(<expr>)
+>>
+
+newOption(id, desc) ::=
+<<
+new Option(<id>, <desc>)
+>>
+
+match(optId1, optId2) ::=
+<<
+new Match(<optId1>, <optId2>)
+>>
+
+matchesById(match) ::=
+<<
+.matchesById(
+    Stream.of(
+        new String[][]{
+            <if(match)><match; separator="\n"><endif>
+        }
+    )
+).collect(Collectors.toMap(data -> data[0], data -> data[1]))
+>>
